@@ -11,8 +11,43 @@ type Site = {
 }
 
 const STORAGE_KEY = 'chromehome.sites.v1'
+const SETTINGS_KEY = 'chromehome.settings.v1'
 const COLS = 5
 const PRESET_COLORS = ['#4A7DFF', '#00E9FF', '#9259FF', '#FF4A7A', '#FFB020', '#2BD576', '#2E7DFF']
+
+type HomepageSettings = {
+  backgroundImage: string | null
+  blurEnabled: boolean
+  blurStrength: number
+}
+
+function loadSettingsFromStorage(): HomepageSettings {
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY)
+    if (!raw) return { backgroundImage: null, blurEnabled: true, blurStrength: 16 }
+    const parsed = JSON.parse(raw) as Partial<HomepageSettings>
+    const blurStrength = typeof parsed.blurStrength === 'number' && Number.isFinite(parsed.blurStrength) ? parsed.blurStrength : 16
+    const backgroundImage =
+      typeof parsed.backgroundImage === 'string'
+        ? (() => {
+            try {
+              const url = new URL(parsed.backgroundImage)
+              if (url.protocol !== 'http:' && url.protocol !== 'https:') return null
+              return url.toString()
+            } catch {
+              return null
+            }
+          })()
+        : null
+    return {
+      backgroundImage,
+      blurEnabled: typeof parsed.blurEnabled === 'boolean' ? parsed.blurEnabled : true,
+      blurStrength: Math.min(40, Math.max(0, blurStrength)),
+    }
+  } catch {
+    return { backgroundImage: null, blurEnabled: true, blurStrength: 16 }
+  }
+}
 
 function loadSitesFromStorage(): Site[] {
   try {
@@ -58,6 +93,18 @@ function normalizeUrl(raw: string) {
   return `https://${value}`
 }
 
+function normalizeHttpUrlOrNull(raw: string) {
+  const candidate = normalizeUrl(raw)
+  if (!candidate) return null
+  try {
+    const url = new URL(candidate)
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null
+    return url.toString()
+  } catch {
+    return null
+  }
+}
+
 function truncateLabel(text: string, maxChars: number) {
   const chars = Array.from(text.trim())
   if (chars.length <= maxChars) return chars.join('')
@@ -91,12 +138,15 @@ function getFaviconUrl(url: string) {
 
 function App() {
   const [sites, setSites] = useState<Site[]>(() => loadSitesFromStorage())
+  const [settings, setSettings] = useState<HomepageSettings>(() => loadSettingsFromStorage())
   const [isAddOpen, setIsAddOpen] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [deleteArmedId, setDeleteArmedId] = useState<string | null>(null)
   const [draftUrl, setDraftUrl] = useState('')
   const [draftName, setDraftName] = useState('')
   const [draftColor, setDraftColor] = useState(PRESET_COLORS[0]!)
   const [draftDisplayMode, setDraftDisplayMode] = useState<'auto' | 'icon' | 'text'>('auto')
+  const [draftBgUrl, setDraftBgUrl] = useState('')
   const [iconErrorById, setIconErrorById] = useState<Record<string, true>>({})
   const longPressTimerRef = useRef<number | null>(null)
   const longPressTriggeredRef = useRef(false)
@@ -108,6 +158,14 @@ function App() {
       // ignore
     }
   }, [sites])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
+    } catch {
+      // ignore
+    }
+  }, [settings])
 
   const canSave = useMemo(() => {
     const url = normalizeUrl(draftUrl)
@@ -121,12 +179,21 @@ function App() {
     }
   }, [draftName, draftUrl])
 
+  const canApplyBg = useMemo(() => {
+    if (!draftBgUrl.trim()) return true
+    return normalizeHttpUrlOrNull(draftBgUrl) !== null
+  }, [draftBgUrl])
+
   function closeAdd() {
     setIsAddOpen(false)
     setDraftUrl('')
     setDraftName('')
     setDraftColor(PRESET_COLORS[0]!)
     setDraftDisplayMode('auto')
+  }
+
+  function closeSettings() {
+    setIsSettingsOpen(false)
   }
 
   function addSite() {
@@ -188,6 +255,12 @@ function App() {
     })
   }
 
+  function applyBackgroundUrl() {
+    const normalized = draftBgUrl.trim() ? normalizeHttpUrlOrNull(draftBgUrl) : null
+    if (draftBgUrl.trim() && !normalized) return
+    setSettings((prev) => ({ ...prev, backgroundImage: normalized }))
+  }
+
   return (
     <div
       className="app"
@@ -195,6 +268,16 @@ function App() {
         if (e.target === e.currentTarget) setDeleteArmedId(null)
       }}
     >
+      {settings.backgroundImage ? (
+        <div
+          className="bgLayer"
+          style={{
+            backgroundImage: `url("${settings.backgroundImage.replaceAll('"', '%22')}")`,
+            filter: `blur(${settings.blurEnabled ? settings.blurStrength : 0}px)`,
+          }}
+          aria-hidden="true"
+        />
+      ) : null}
       <div
         className="gridWrap"
         onPointerDown={(e) => {
@@ -265,10 +348,25 @@ function App() {
         aria-label="添加网站"
         onClick={() => {
           setDeleteArmedId(null)
+          setIsSettingsOpen(false)
           setIsAddOpen(true)
         }}
       >
         +
+      </button>
+
+      <button
+        type="button"
+        className="settingsFab"
+        aria-label="设置"
+        onClick={() => {
+          setDeleteArmedId(null)
+          setIsAddOpen(false)
+          setDraftBgUrl(settings.backgroundImage ?? '')
+          setIsSettingsOpen(true)
+        }}
+      >
+        设置
       </button>
 
       {isAddOpen ? (
@@ -363,6 +461,80 @@ function App() {
               <button type="button" className="primary" disabled={!canSave} onClick={addSite}>
                 添加
               </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {isSettingsOpen ? (
+        <div
+          className="modalOverlay"
+          role="presentation"
+          onPointerDown={(e) => {
+            if (e.target === e.currentTarget) closeSettings()
+          }}
+        >
+          <div className="modal" role="dialog" aria-modal="true" aria-label="设置">
+            <div className="modalHeader">
+              <div className="modalTitle">设置</div>
+              <button type="button" className="modalClose" aria-label="关闭" onClick={closeSettings}>
+                ×
+              </button>
+            </div>
+
+            <div className="form">
+              <div className="field">
+                <div className="fieldLabel">背景图 URL</div>
+                {settings.backgroundImage ? <img className="bgPreview" src={settings.backgroundImage} alt="" /> : <div className="bgEmpty">未设置</div>}
+                <input
+                  className="input"
+                  inputMode="url"
+                  placeholder="https://images.example.com/bg.jpg"
+                  value={draftBgUrl}
+                  onChange={(e) => setDraftBgUrl(e.target.value)}
+                />
+                <div className="btnRow">
+                  <button
+                    type="button"
+                    className="secondary"
+                    disabled={!settings.backgroundImage}
+                    onClick={() => {
+                      setDraftBgUrl('')
+                      setSettings((prev) => ({ ...prev, backgroundImage: null }))
+                    }}
+                  >
+                    清除背景
+                  </button>
+                  <button type="button" className="secondary" disabled={!canApplyBg} onClick={applyBackgroundUrl}>
+                    应用
+                  </button>
+                </div>
+              </div>
+
+              <div className="field">
+                <div className="fieldLabel">背景模糊</div>
+                <label className="toggleRow">
+                  <input
+                    type="checkbox"
+                    checked={settings.blurEnabled}
+                    onChange={(e) => setSettings((prev) => ({ ...prev, blurEnabled: e.target.checked }))}
+                  />
+                  <span className="toggleText">启用模糊</span>
+                </label>
+                <div className="rangeRow">
+                  <input
+                    className="range"
+                    type="range"
+                    min={0}
+                    max={40}
+                    step={1}
+                    value={settings.blurStrength}
+                    disabled={!settings.blurEnabled}
+                    onChange={(e) => setSettings((prev) => ({ ...prev, blurStrength: Number(e.target.value) }))}
+                  />
+                  <div className="rangeValue">{settings.blurStrength}px</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
