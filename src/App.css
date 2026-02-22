@@ -1,0 +1,302 @@
+.app {
+  min-height: 100%;
+  padding: calc(14px + env(safe-area-inset-top)) 12px calc(20px + env(safe-area-inset-bottom)) 12px;
+  background: radial-gradient(1100px 700px at 12% 8%, rgba(89, 153, 255, 0.18), transparent 55%),
+    radial-gradient(900px 600px at 88% 24%, rgba(146, 89, 255, 0.16), transparent 58%),
+    radial-gradient(900px 700px at 52% 110%, rgba(0, 233, 255, 0.1), transparent 55%),
+    linear-gradient(180deg, #050912 0%, #040715 55%, #02040c 100%);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+}
+
+.gridWrap {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: auto;
+  width: 100%;
+  padding-top: 20vh;
+  padding-bottom: 18vh;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 1fr);
+  gap: 10px 8px;
+  padding: 6px 4px;
+  margin: 0;
+  width: min(360px, 100%);
+  user-select: none;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.92);
+  touch-action: manipulation;
+}
+
+.icon {
+  width: min(100%, 56px);
+  aspect-ratio: 1;
+  border-radius: 999px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(255, 255, 255, 0.18);
+  overflow: hidden;
+}
+
+.icon::before {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(circle at 30% 22%, rgba(255, 255, 255, 0.5), transparent 38%),
+    radial-gradient(circle at 70% 80%, rgba(0, 0, 0, 0.35), transparent 55%);
+  mix-blend-mode: overlay;
+  opacity: 0.7;
+}
+
+.iconImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.25));
+}
+
+.iconText {
+  position: relative;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  text-shadow: 0 6px 16px rgba(0, 0, 0, 0.42);
+}
+
+.label {
+  width: 100%;
+  font-size: 11px;
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.9;
+}
+
+.tile:active .icon {
+  transform: translateY(1px) scale(0.98);
+}
+
+.deleteBtn {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 64, 96, 0.92);
+  color: white;
+  font-size: 16px;
+  line-height: 20px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.45);
+}
+
+.fab {
+  position: fixed;
+  right: calc(16px + env(safe-area-inset-right));
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: linear-gradient(135deg, rgba(89, 153, 255, 0.95), rgba(146, 89, 255, 0.9));
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 28px;
+  line-height: 52px;
+  padding: 0;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 233, 255, 0.18) inset;
+  backdrop-filter: blur(8px);
+}
+
+.fab:active {
+  transform: translateY(1px);
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  padding: calc(14px + env(safe-area-inset-top)) 12px calc(14px + env(safe-area-inset-bottom)) 12px;
+  background: rgba(3, 6, 15, 0.62);
+  backdrop-filter: blur(10px);
+  display: grid;
+  place-items: center;
+}
+
+.modal {
+  width: min(520px, 100%);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, rgba(14, 18, 38, 0.86), rgba(8, 11, 22, 0.84));
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 14px 10px 14px;
+}
+
+.modalTitle {
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: 0.2px;
+}
+
+.modalClose {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 20px;
+  line-height: 32px;
+  padding: 0;
+}
+
+.form {
+  padding: 0 14px 14px 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.fieldRow {
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.input {
+  width: 100%;
+  height: 40px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.92);
+  padding: 0 12px;
+  outline: none;
+}
+
+.input:focus {
+  border-color: rgba(0, 233, 255, 0.42);
+  box-shadow: 0 0 0 3px rgba(0, 233, 255, 0.14);
+}
+
+.color {
+  width: 38px;
+  height: 38px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.colorRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 4px 2px;
+}
+
+.swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.12) inset;
+  padding: 0;
+}
+
+.swatch--active {
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35), 0 0 0 2px rgba(0, 233, 255, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.12) inset;
+}
+
+.modeGroup {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.modeBtn {
+  height: 38px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.modeBtn--active {
+  border-color: rgba(0, 233, 255, 0.42);
+  box-shadow: 0 0 0 3px rgba(0, 233, 255, 0.12);
+  background: linear-gradient(135deg, rgba(89, 153, 255, 0.24), rgba(0, 233, 255, 0.1));
+}
+
+.colorValue {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.78);
+  font-variant-numeric: tabular-nums;
+}
+
+.primary {
+  height: 42px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(135deg, rgba(89, 153, 255, 0.95), rgba(0, 233, 255, 0.78));
+  color: rgba(255, 255, 255, 0.96);
+  font-weight: 650;
+  letter-spacing: 0.2px;
+}
+
+.primary:disabled {
+  opacity: 0.5;
+}
+
+@media (max-width: 380px) {
+  .grid {
+    gap: 8px 6px;
+  }
+  .label {
+    font-size: 10.5px;
+  }
+}
