@@ -105,6 +105,13 @@ function normalizeHttpUrlOrNull(raw: string) {
   }
 }
 
+function cssUrlValue(url: string) {
+  const safe = normalizeHttpUrlOrNull(url)
+  if (!safe) return null
+  const escaped = safe.replace(/["\\]/g, '\\$&')
+  return `url("${escaped}")`
+}
+
 function truncateLabel(text: string, maxChars: number) {
   const chars = Array.from(text.trim())
   if (chars.length <= maxChars) return chars.join('')
@@ -272,7 +279,7 @@ function App() {
         <div
           className="bgLayer"
           style={{
-            backgroundImage: `url("${settings.backgroundImage.replaceAll('"', '%22')}")`,
+            backgroundImage: cssUrlValue(settings.backgroundImage) ?? undefined,
             filter: `blur(${settings.blurEnabled ? settings.blurStrength : 0}px)`,
           }}
           aria-hidden="true"
